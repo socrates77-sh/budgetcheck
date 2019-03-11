@@ -1,5 +1,6 @@
 # history:
 # 2019/03/08  v1.0  initial
+# 2019/03/11  v1.1  add profit rate
 
 import datetime
 import os
@@ -17,10 +18,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-VERSION = '1.0'
+VERSION = '1.1'
 
 START = '1月'
-END = '2月'
+END = '3月'
 
 SAVE_PATH = r'.'
 NOTE_PATH = r'./note'
@@ -93,8 +94,11 @@ def set_cell_format(cell):
     font.size = Pt(10)
 
 
-def fill_table(tab, df, digits):
-    expr = '%%.%df' % digits
+def fill_table(tab, df, digits, percent):
+    if percent:
+        expr = '%%.%df%%%%' % digits
+    else:
+        expr = '%%.%df' % digits
 
     tab.first_col = True
     # tab.last_col = True
@@ -115,7 +119,10 @@ def fill_table(tab, df, digits):
         for j in range(len(df.columns)):
             cell = tab.cell(i+1, j+1)
             set_cell_format(cell)
-            cell.text = expr % df.iloc[i, j]
+            if percent:
+                cell.text = expr % (df.iloc[i, j]*100)
+            else:
+                cell.text = expr % df.iloc[i, j]
 
     for i in range(len(df.columns)):
         cell = tab.cell(len(df.index), i+1)
@@ -156,7 +163,7 @@ def slide_cover():
     print('Slide: cover')
 
 
-def slide_chart_table(title, tab_df, digits, png_file='tmp.png'):
+def slide_chart_table(title, tab_df, digits, percent=False, png_file='tmp.png'):
     slide = prs.slides.add_slide(prs.slide_layouts[SLD_LAYOUT_BLANK])
 
     left = Inches(MARGIN)
@@ -188,7 +195,7 @@ def slide_chart_table(title, tab_df, digits, png_file='tmp.png'):
     rows = tab_df.shape[0]+1
     cols = tab_df.shape[1]+1
     gf = slide.shapes.add_table(rows, cols, left, top, width, height)
-    fill_table(gf.table, tab_df, digits)
+    fill_table(gf.table, tab_df, digits, percent)
 
     print('Slide: %s' % title)
 
@@ -268,15 +275,32 @@ def slide_note(title, note_file):
     print('Slide: %s' % title)
 
 
-def report_mode1(pd_budget, pd_sale, main_title, sub_title, digit):
+def report_mode1(budget, sale, main_title, sub_title, digit):
     df = pd.DataFrame(index=['预算', '实际', '完成率'], data=[
-        pd_budget, pd_sale, pd_sale/pd_budget])
+        budget, sale, sale/budget])
     ax = df.loc[['预算', '实际'], :].T.plot.bar(figsize=(10, 5))
     fig = ax.get_figure()
     fig.savefig('tmp.png')
     df['合计'] = df.apply(lambda x: x.sum(), axis=1)
     df.loc['完成率', '合计'] = df.loc['实际', '合计']/df.loc['预算', '合计']
-    slide_chart_table('%s/%s' % (main_title, sub_title), df, digit)
+    slide_chart_table('%s/%s' % (main_title, sub_title),
+                      df, digit)
+
+
+def report_mode11(budget_profit, budget_revenue, sale_profit, sale_revenue,
+                  main_title, sub_title, digit):
+    df_budget = budget_profit/budget_revenue
+    df_sale = sale_profit/sale_revenue
+    df = pd.DataFrame(index=['预算', '实际', '完成率'], data=[
+        df_budget, df_sale, df_sale/df_budget])
+    ax = df.loc[['预算', '实际'], :].T.plot.bar(figsize=(10, 5))
+    fig = ax.get_figure()
+    fig.savefig('tmp.png')
+    df.loc['预算', '合计'] = budget_profit.sum()/budget_revenue.sum()
+    df.loc['实际', '合计'] = sale_profit.sum()/sale_revenue.sum()
+    df.loc['完成率', '合计'] = df.loc['实际', '合计']/df.loc['预算', '合计']
+    slide_chart_table('%s/%s' % (main_title, sub_title),
+                      df, digit, percent=True)
 
 
 def report_mode2(df, main_title, sub_title):
@@ -287,15 +311,36 @@ def report_mode2(df, main_title, sub_title):
     slide_chart('%s/%s' % (main_title, sub_title))
 
 
-def report_mode3(pd_budget, pd_sale, start, end, sub_title, digit):
+def report_mode3(budget, sale, start, end, sub_title, digit):
     df = pd.DataFrame(index=['预算', '实际', '完成率'], data=[
-        pd_budget, pd_sale, pd_sale/pd_budget])
+        budget, sale, sale/budget])
     ax = df.loc[['预算', '实际'], :].T.plot.bar(figsize=(10, 4.5))
     fig = ax.get_figure()
     fig.savefig('tmp.png')
     df['合计'] = df.apply(lambda x: x.sum(), axis=1)
     df.loc['完成率', '合计'] = df.loc['实际', '合计']/df.loc['预算', '合计']
     slide_chart_table('%s-%s/%s' % (start, end, sub_title), df, digit)
+
+
+def report_mode31(budget_profit, budget_revenue, sale_profit, sale_revenue,
+                  start, end, sub_title, digit):
+
+    df_budget = budget_profit/budget_revenue
+    df_sale = sale_profit/sale_revenue
+    df = pd.DataFrame(index=['预算', '实际', '完成率'], data=[
+        df_budget, df_sale, df_sale/df_budget])
+    # df = pd.DataFrame(index=['预算', '实际', '完成率'], data=[
+    #     budget, sale, sale/budget])
+    ax = df.loc[['预算', '实际'], :].T.plot.bar(figsize=(10, 4.5))
+    fig = ax.get_figure()
+    fig.savefig('tmp.png')
+    df.loc['预算', '合计'] = budget_profit.sum()/budget_revenue.sum()
+    df.loc['实际', '合计'] = sale_profit.sum()/sale_revenue.sum()
+    df.loc['完成率', '合计'] = df.loc['实际', '合计']/df.loc['预算', '合计']
+    # df['合计'] = df.apply(lambda x: x.sum(), axis=1)
+    df.loc['完成率', '合计'] = df.loc['实际', '合计']/df.loc['预算', '合计']
+    slide_chart_table('%s-%s/%s' % (start, end, sub_title),
+                      df, digit, percent=True)
 
 
 def product_report(product):
@@ -308,6 +353,11 @@ def product_report(product):
     a = df_budget_profit.loc[product]
     b = df_sale_profit.loc[product]
     report_mode1(a, b, product, '销售毛利', digit=1)
+    a1 = df_budget_profit.loc[product]
+    a2 = df_budget_revenue.loc[product]
+    b1 = df_sale_profit.loc[product]
+    b2 = df_sale_revenue.loc[product]
+    report_mode11(a1, a2, b1, b2, product, '毛利率', digit=1)
 
     note_file = os.path.join(NOTE_PATH, product+'.txt')
     if os.path.exists(note_file):
@@ -321,15 +371,21 @@ def main():
 
     a = df_budget_amount.sum()
     b = df_sale_amount.sum()
-    report_mode1(a, b, '总体情况', '总销售数量', digit=0)
+    report_mode1(a, b, '总体情况', '销售数量', digit=0)
 
     a = df_budget_revenue.sum()
     b = df_sale_revenue.sum()
-    report_mode1(a, b, '总体情况', '总销售收入', digit=0)
+    report_mode1(a, b, '总体情况', '销售收入', digit=0)
 
     a = df_budget_profit.sum()
     b = df_sale_profit.sum()
-    report_mode1(a, b, '总体情况', '总销售毛利', digit=1)
+    report_mode1(a, b, '总体情况', '销售毛利', digit=1)
+
+    a1 = df_budget_profit.sum()
+    a2 = df_budget_revenue.sum()
+    b1 = df_sale_profit.sum()
+    b2 = df_sale_revenue.sum()
+    report_mode11(a1, a2, b1, b2, '总体情况', '毛利率', digit=1)
 
     report_mode2(df_sale_revenue, '总体情况', '销售收入构成')
     report_mode2(df_sale_profit, '总体情况', '销售毛利构成')
@@ -346,6 +402,12 @@ def main():
     b = df_sale_profit.loc[:, START:END].sum(axis=1)
     report_mode3(a, b, START, END, '销售毛利', digit=1)
 
+    a1 = df_budget_profit.loc[:, START:END].sum(axis=1)
+    a2 = df_budget_revenue.loc[:, START:END].sum(axis=1)
+    b1 = df_sale_profit.loc[:, START:END].sum(axis=1)
+    b2 = df_sale_revenue.loc[:, START:END].sum(axis=1)
+    report_mode31(a1, a2, b1, b2, START, END, '毛利率', digit=1)
+
     product_report('7022')
     product_report('7323')
     product_report('6090')
@@ -356,8 +418,8 @@ def main():
     # product_report('HY090')
 
     save_ppt()
-    wait_any_key()
     clear_tmp_file()
+    wait_any_key()
 
 
 if __name__ == '__main__':
