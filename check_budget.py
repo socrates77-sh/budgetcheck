@@ -1,6 +1,7 @@
 # history:
 # 2019/03/08  v1.0  initial
 # 2019/03/11  v1.1  add profit rate
+# 2019/03/18  v1.2  update report_mode3/31 title
 
 import datetime
 import os
@@ -18,7 +19,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-VERSION = '1.1'
+VERSION = '1.2'
 
 START = '1月'
 END = '3月'
@@ -319,7 +320,11 @@ def report_mode3(budget, sale, start, end, sub_title, digit):
     fig.savefig('tmp.png')
     df['合计'] = df.apply(lambda x: x.sum(), axis=1)
     df.loc['完成率', '合计'] = df.loc['实际', '合计']/df.loc['预算', '合计']
-    slide_chart_table('%s-%s/%s' % (start, end, sub_title), df, digit)
+    if start == end:
+        title = '%s/%s' % (start, sub_title)
+    else:
+        title = '%s-%s/%s' % (start, end, sub_title)
+    slide_chart_table(title, df, digit)
 
 
 def report_mode31(budget_profit, budget_revenue, sale_profit, sale_revenue,
@@ -339,8 +344,11 @@ def report_mode31(budget_profit, budget_revenue, sale_profit, sale_revenue,
     df.loc['完成率', '合计'] = df.loc['实际', '合计']/df.loc['预算', '合计']
     # df['合计'] = df.apply(lambda x: x.sum(), axis=1)
     df.loc['完成率', '合计'] = df.loc['实际', '合计']/df.loc['预算', '合计']
-    slide_chart_table('%s-%s/%s' % (start, end, sub_title),
-                      df, digit, percent=True)
+    if start == end:
+        title = '%s/%s' % (start, sub_title)
+    else:
+        title = '%s-%s/%s' % (start, end, sub_title)
+    slide_chart_table(title, df, digit, percent=True)
 
 
 def product_report(product):
@@ -390,13 +398,25 @@ def main():
     report_mode2(df_sale_revenue, '总体情况', '销售收入构成')
     report_mode2(df_sale_profit, '总体情况', '销售毛利构成')
 
+    a = df_budget_amount.loc[:, END:END].sum(axis=1)
+    b = df_sale_amount.loc[:, END:END].sum(axis=1)
+    report_mode3(a, b, END, END, '销售数量', digit=0)
+
     a = df_budget_amount.loc[:, START:END].sum(axis=1)
     b = df_sale_amount.loc[:, START:END].sum(axis=1)
     report_mode3(a, b, START, END, '销售数量', digit=0)
 
+    a = df_budget_revenue.loc[:, END:END].sum(axis=1)
+    b = df_sale_revenue.loc[:, END:END].sum(axis=1)
+    report_mode3(a, b, END, END, '销售收入', digit=0)
+
     a = df_budget_revenue.loc[:, START:END].sum(axis=1)
     b = df_sale_revenue.loc[:, START:END].sum(axis=1)
     report_mode3(a, b, START, END, '销售收入', digit=0)
+
+    a = df_budget_profit.loc[:, END:END].sum(axis=1)
+    b = df_sale_profit.loc[:, END:END].sum(axis=1)
+    report_mode3(a, b, END, END, '销售毛利', digit=1)
 
     a = df_budget_profit.loc[:, START:END].sum(axis=1)
     b = df_sale_profit.loc[:, START:END].sum(axis=1)
@@ -414,8 +434,8 @@ def main():
     product_report('5314')
     product_report('5312')
     product_report('3112')
-    # product_report('9006')
-    # product_report('HY090')
+    product_report('9006')
+    product_report('HY090')
 
     save_ppt()
     clear_tmp_file()
