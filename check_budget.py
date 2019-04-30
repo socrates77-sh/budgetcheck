@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 VERSION = '1.2'
 
 START = '1月'
-END = '3月'
+END = '4月'
 
 SAVE_PATH = r'.'
 NOTE_PATH = r'./note'
@@ -395,6 +395,12 @@ def main():
     b2 = df_sale_revenue.sum()
     report_mode11(a1, a2, b1, b2, '总体情况', '毛利率', digit=1)
 
+    a1 = df_budget_profit.drop(['3112']).sum()
+    a2 = df_budget_revenue.drop(['3112']).sum()
+    b1 = df_sale_profit.drop(['3112']).sum()
+    b2 = df_sale_revenue.drop(['3112']).sum()
+    report_mode11(a1, a2, b1, b2, '总体情况(除3112)', '毛利率', digit=1)
+
     report_mode2(df_sale_revenue, '总体情况', '销售收入构成')
     report_mode2(df_sale_profit, '总体情况', '销售毛利构成')
 
@@ -422,6 +428,12 @@ def main():
     b = df_sale_profit.loc[:, START:END].sum(axis=1)
     report_mode3(a, b, START, END, '销售毛利', digit=1)
 
+    a1 = df_budget_profit.loc[:, END:END].sum(axis=1)
+    a2 = df_budget_revenue.loc[:, END:END].sum(axis=1)
+    b1 = df_sale_profit.loc[:, END:END].sum(axis=1)
+    b2 = df_sale_revenue.loc[:, END:END].sum(axis=1)
+    report_mode31(a1, a2, b1, b2, END, END, '毛利率', digit=1)
+
     a1 = df_budget_profit.loc[:, START:END].sum(axis=1)
     a2 = df_budget_revenue.loc[:, START:END].sum(axis=1)
     b1 = df_sale_profit.loc[:, START:END].sum(axis=1)
@@ -434,8 +446,13 @@ def main():
     product_report('5314')
     product_report('5312')
     product_report('3112')
+    product_report('9040')
     product_report('9006')
     product_report('HY090')
+
+    note_file = os.path.join(NOTE_PATH, '其他.txt')
+    if os.path.exists(note_file):
+        slide_note('其他情况说明', note_file)
 
     save_ppt()
     clear_tmp_file()
