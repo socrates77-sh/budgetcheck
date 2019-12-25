@@ -3,6 +3,7 @@
 # 2019/03/11  v1.1  add profit rate
 # 2019/03/18  v1.2  update report_mode3/31 title
 # 2019/10/17  v1.3  add IS_ZJ option
+# 2019/12/25  v1.4  load sinomcu template
 
 import datetime
 import os
@@ -20,7 +21,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-VERSION = '1.3'
+VERSION = '1.4'
 
 START = '1月'
 END = '11月'
@@ -39,7 +40,11 @@ else:
 TITLE = PPT_FILE_NAME_PROFIX
 SUB_TITLE = '张文荣'
 
-MARGIN = 0.5
+# MARGIN = 0.5
+HORI_MARGIN = 0.5
+TOP_TITLE_MARGIN = 1.1
+TOP_MARGIN = 0.5
+BOT_MARGIN = 0.4
 
 SLD_LAYOUT_TITLE = 0
 SLD_LAYOUT_BLANK = 6
@@ -52,7 +57,7 @@ SALE_AMOUNT = '销售数量'
 SALE_REVENUE = '销售收入'
 SALE_PROFIT = '销售毛利'
 
-prs = Presentation()
+prs = Presentation('./template.pptx')
 mpl.rcParams['font.sans-serif'] = ['SimHei']
 mpl.rcParams['figure.max_open_warning'] = 100
 df_budget_amount = pd.read_excel(
@@ -151,10 +156,10 @@ def fill_table(tab, df, digits, percent):
 def slide_cover():
     slide = prs.slides.add_slide(prs.slide_layouts[SLD_LAYOUT_BLANK])
 
-    left = Inches(MARGIN)
-    top = Inches(MARGIN)
-    width = prs.slide_width - 2*Inches(MARGIN)
-    height = prs.slide_height-2*Inches(MARGIN)
+    left = Inches(HORI_MARGIN)
+    top = Inches(TOP_TITLE_MARGIN)
+    width = prs.slide_width - 2*Inches(HORI_MARGIN)
+    height = prs.slide_height - Inches(TOP_TITLE_MARGIN+BOT_MARGIN)
 
     txbox = slide.shapes.add_textbox(left, top, width, height)
     tf = txbox.text_frame
@@ -165,7 +170,7 @@ def slide_cover():
     p = tf.paragraphs[0]
     p.alignment = PP_ALIGN.CENTER
     font = p.font
-    font.name = '华文中宋'
+    # font.name = '华文中宋'
     font.size = Pt(36)
     font.bold = True
     p.text = TITLE
@@ -174,7 +179,7 @@ def slide_cover():
     p = tf.add_paragraph()
     p.alignment = PP_ALIGN.CENTER
     font = p.font
-    font.name = '华文中宋'
+    # font.name = '华文中宋'
     font.size = Pt(26)
     font.bold = True
     p.text = SUB_TITLE
@@ -184,10 +189,10 @@ def slide_cover():
 def slide_chart_table(title, tab_df, digits, percent=False, png_file='tmp.png'):
     slide = prs.slides.add_slide(prs.slide_layouts[SLD_LAYOUT_BLANK])
 
-    left = Inches(MARGIN)
-    top = Inches(MARGIN)
-    width = prs.slide_width - 2*Inches(MARGIN)
-    height = Inches(MARGIN)
+    left = Inches(HORI_MARGIN)
+    top = Inches(TOP_MARGIN)
+    width = prs.slide_width - 2*Inches(HORI_MARGIN)
+    height = 1.3*Inches(TOP_MARGIN)
 
     txbox = slide.shapes.add_textbox(left, top, width, height)
     tf = txbox.text_frame
@@ -195,21 +200,21 @@ def slide_chart_table(title, tab_df, digits, percent=False, png_file='tmp.png'):
     tf.auto_size = MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE
 
     p = tf.paragraphs[0]
-    p.alignment = PP_ALIGN.LEFT
+    p.alignment = PP_ALIGN.RIGHT
     font = p.font
-    font.name = '华文中宋'
+    # font.name = '华文中宋'
     font.size = Pt(26)
     font.bold = True
     p.text = title
 
     top += height
-    width = prs.slide_width - 2*Inches(MARGIN)
-    height = 9*Inches(MARGIN)
+    width = prs.slide_width - 2*Inches(HORI_MARGIN)
+    height = 9*Inches(TOP_MARGIN)
     slide.shapes.add_picture(png_file, left, top, width, height)
 
-    top += height
-    width = prs.slide_width - 2*Inches(MARGIN)
-    height = 2*Inches(MARGIN)
+    top += height + 0.3*Inches(TOP_MARGIN)
+    width = prs.slide_width - 2*Inches(HORI_MARGIN)
+    height = 2*Inches(TOP_MARGIN)
     rows = tab_df.shape[0]+1
     cols = tab_df.shape[1]+1
     gf = slide.shapes.add_table(rows, cols, left, top, width, height)
@@ -221,10 +226,10 @@ def slide_chart_table(title, tab_df, digits, percent=False, png_file='tmp.png'):
 def slide_chart(title, png_file='tmp.png'):
     slide = prs.slides.add_slide(prs.slide_layouts[SLD_LAYOUT_BLANK])
 
-    left = Inches(MARGIN)
-    top = Inches(MARGIN)
-    width = prs.slide_width - 2*Inches(MARGIN)
-    height = Inches(MARGIN)
+    left = Inches(HORI_MARGIN)
+    top = Inches(TOP_MARGIN)
+    width = prs.slide_width - 2*Inches(HORI_MARGIN)
+    height = 1.3*Inches(TOP_MARGIN)
 
     txbox = slide.shapes.add_textbox(left, top, width, height)
     tf = txbox.text_frame
@@ -232,16 +237,16 @@ def slide_chart(title, png_file='tmp.png'):
     tf.auto_size = MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE
 
     p = tf.paragraphs[0]
-    p.alignment = PP_ALIGN.LEFT
+    p.alignment = PP_ALIGN.RIGHT
     font = p.font
-    font.name = '华文中宋'
+    # font.name = '华文中宋'
     font.size = Pt(26)
     font.bold = True
     p.text = title
 
     top += height
-    width = prs.slide_width - 2*Inches(MARGIN)
-    height = prs.slide_height - height - Inches(MARGIN)
+    width = prs.slide_width - 2*Inches(HORI_MARGIN)
+    height = prs.slide_height - height - Inches(TOP_MARGIN+BOT_MARGIN)
     slide.shapes.add_picture(png_file, left, top, width, height)
 
     print('Slide: %s' % title)
@@ -250,10 +255,10 @@ def slide_chart(title, png_file='tmp.png'):
 def slide_note(title, note_file):
     slide = prs.slides.add_slide(prs.slide_layouts[SLD_LAYOUT_BLANK])
 
-    left = Inches(MARGIN)
-    top = Inches(MARGIN)
-    width = prs.slide_width - 2*Inches(MARGIN)
-    height = Inches(MARGIN)
+    left = Inches(HORI_MARGIN)
+    top = Inches(TOP_MARGIN)
+    width = prs.slide_width - 2*Inches(HORI_MARGIN)
+    height = 1.3*Inches(TOP_MARGIN)
 
     txbox = slide.shapes.add_textbox(left, top, width, height)
     tf = txbox.text_frame
@@ -261,9 +266,9 @@ def slide_note(title, note_file):
     tf.auto_size = MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE
 
     p = tf.paragraphs[0]
-    p.alignment = PP_ALIGN.LEFT
+    p.alignment = PP_ALIGN.RIGHT
     font = p.font
-    font.name = '华文中宋'
+    # font.name = '华文中宋'
     font.size = Pt(26)
     font.bold = True
     p.text = title
@@ -271,9 +276,9 @@ def slide_note(title, note_file):
     with open(note_file, 'r') as f:
         txt = f.read()
 
-    top += height + Inches(MARGIN)
-    width = prs.slide_width - 2*Inches(MARGIN)
-    height = prs.slide_height - height - 3*Inches(MARGIN)
+    top += height
+    width = prs.slide_width - 2*Inches(HORI_MARGIN)
+    height = prs.slide_height - height - Inches(TOP_MARGIN+BOT_MARGIN)
     txbox = slide.shapes.add_textbox(left, top, width, height)
 
     tf = txbox.text_frame
@@ -285,7 +290,7 @@ def slide_note(title, note_file):
     p.alignment = PP_ALIGN.LEFT
     p.line_spacing = 2
     font = p.font
-    font.name = '华文中宋'
+    # font.name = '华文中宋'
     font.size = Pt(18)
     font.bold = False
     p.text = txt
