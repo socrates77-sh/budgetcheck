@@ -2,6 +2,7 @@
 # 2019/03/08  v1.0  initial
 # 2019/03/11  v1.1  add profit rate
 # 2019/03/18  v1.2  update report_mode3/31 title
+# 2019/10/17  v1.3  add IS_ZJ option
 
 import datetime
 import os
@@ -19,14 +20,22 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-VERSION = '1.2'
+VERSION = '1.3'
 
 START = '1月'
-END = '4月'
+END = '11月'
+
+# IS_ZJ = True
+IS_ZJ = False
 
 SAVE_PATH = r'.'
 NOTE_PATH = r'./note'
-PPT_FILE_NAME_PROFIX = '外协产品线报告'
+# PPT_FILE_NAME_PROFIX = '外协产品线报告'　if IS_ZJ else '中基产品报告【表情】
+if IS_ZJ:
+    PPT_FILE_NAME_PROFIX = '中基产品报告'
+else:
+    PPT_FILE_NAME_PROFIX = '外协产品线报告'
+
 TITLE = PPT_FILE_NAME_PROFIX
 SUB_TITLE = '张文荣'
 
@@ -58,6 +67,14 @@ df_sale_revenue = pd.read_excel(
     XLS_FILE, sheet_name=SALE_REVENUE, index_col='品名')
 df_sale_profit = pd.read_excel(
     XLS_FILE, sheet_name=SALE_PROFIT, index_col='品名')
+
+if IS_ZJ:
+    df_budget_amount = df_budget_amount.drop(['3112', '9006', 'HY090'])
+    df_budget_revenue = df_budget_revenue.drop(['3112', '9006', 'HY090'])
+    df_budget_profit = df_budget_profit.drop(['3112', '9006', 'HY090'])
+    df_sale_amount = df_sale_amount.drop(['3112', '9006', 'HY090'])
+    df_sale_revenue = df_sale_revenue.drop(['3112', '9006', 'HY090'])
+    df_sale_profit = df_sale_profit.drop(['3112', '9006', 'HY090'])
 
 
 def info():
@@ -360,16 +377,17 @@ def product_report(product):
     report_mode1(a, b, product, '销售收入', digit=0)
     a = df_budget_profit.loc[product]
     b = df_sale_profit.loc[product]
-    report_mode1(a, b, product, '销售毛利', digit=1)
-    a1 = df_budget_profit.loc[product]
-    a2 = df_budget_revenue.loc[product]
-    b1 = df_sale_profit.loc[product]
-    b2 = df_sale_revenue.loc[product]
-    report_mode11(a1, a2, b1, b2, product, '毛利率', digit=1)
+    if not IS_ZJ:
+        report_mode1(a, b, product, '销售毛利', digit=1)
+        a1 = df_budget_profit.loc[product]
+        a2 = df_budget_revenue.loc[product]
+        b1 = df_sale_profit.loc[product]
+        b2 = df_sale_revenue.loc[product]
+        report_mode11(a1, a2, b1, b2, product, '毛利率', digit=1)
 
-    note_file = os.path.join(NOTE_PATH, product+'.txt')
-    if os.path.exists(note_file):
-        slide_note('%s情况说明' % product, note_file)
+        note_file = os.path.join(NOTE_PATH, product+'.txt')
+        if os.path.exists(note_file):
+            slide_note('%s情况说明' % product, note_file)
 
 
 def main():
@@ -385,24 +403,25 @@ def main():
     b = df_sale_revenue.sum()
     report_mode1(a, b, '总体情况', '销售收入', digit=0)
 
-    a = df_budget_profit.sum()
-    b = df_sale_profit.sum()
-    report_mode1(a, b, '总体情况', '销售毛利', digit=1)
+    if not IS_ZJ:
+        a = df_budget_profit.sum()
+        b = df_sale_profit.sum()
+        report_mode1(a, b, '总体情况', '销售毛利', digit=1)
 
-    a1 = df_budget_profit.sum()
-    a2 = df_budget_revenue.sum()
-    b1 = df_sale_profit.sum()
-    b2 = df_sale_revenue.sum()
-    report_mode11(a1, a2, b1, b2, '总体情况', '毛利率', digit=1)
+        a1 = df_budget_profit.sum()
+        a2 = df_budget_revenue.sum()
+        b1 = df_sale_profit.sum()
+        b2 = df_sale_revenue.sum()
+        report_mode11(a1, a2, b1, b2, '总体情况', '毛利率', digit=1)
 
-    a1 = df_budget_profit.drop(['3112']).sum()
-    a2 = df_budget_revenue.drop(['3112']).sum()
-    b1 = df_sale_profit.drop(['3112']).sum()
-    b2 = df_sale_revenue.drop(['3112']).sum()
-    report_mode11(a1, a2, b1, b2, '总体情况(除3112)', '毛利率', digit=1)
+        a1 = df_budget_profit.drop(['3112']).sum()
+        a2 = df_budget_revenue.drop(['3112']).sum()
+        b1 = df_sale_profit.drop(['3112']).sum()
+        b2 = df_sale_revenue.drop(['3112']).sum()
+        report_mode11(a1, a2, b1, b2, '总体情况(除3112)', '毛利率', digit=1)
 
-    report_mode2(df_sale_revenue, '总体情况', '销售收入构成')
-    report_mode2(df_sale_profit, '总体情况', '销售毛利构成')
+        report_mode2(df_sale_revenue, '总体情况', '销售收入构成')
+        report_mode2(df_sale_profit, '总体情况', '销售毛利构成')
 
     a = df_budget_amount.loc[:, END:END].sum(axis=1)
     b = df_sale_amount.loc[:, END:END].sum(axis=1)
@@ -420,39 +439,42 @@ def main():
     b = df_sale_revenue.loc[:, START:END].sum(axis=1)
     report_mode3(a, b, START, END, '销售收入', digit=0)
 
-    a = df_budget_profit.loc[:, END:END].sum(axis=1)
-    b = df_sale_profit.loc[:, END:END].sum(axis=1)
-    report_mode3(a, b, END, END, '销售毛利', digit=1)
+    if not IS_ZJ:
+        a = df_budget_profit.loc[:, END:END].sum(axis=1)
+        b = df_sale_profit.loc[:, END:END].sum(axis=1)
+        report_mode3(a, b, END, END, '销售毛利', digit=1)
 
-    a = df_budget_profit.loc[:, START:END].sum(axis=1)
-    b = df_sale_profit.loc[:, START:END].sum(axis=1)
-    report_mode3(a, b, START, END, '销售毛利', digit=1)
+        a = df_budget_profit.loc[:, START:END].sum(axis=1)
+        b = df_sale_profit.loc[:, START:END].sum(axis=1)
+        report_mode3(a, b, START, END, '销售毛利', digit=1)
 
-    a1 = df_budget_profit.loc[:, END:END].sum(axis=1)
-    a2 = df_budget_revenue.loc[:, END:END].sum(axis=1)
-    b1 = df_sale_profit.loc[:, END:END].sum(axis=1)
-    b2 = df_sale_revenue.loc[:, END:END].sum(axis=1)
-    report_mode31(a1, a2, b1, b2, END, END, '毛利率', digit=1)
+        a1 = df_budget_profit.loc[:, END:END].sum(axis=1)
+        a2 = df_budget_revenue.loc[:, END:END].sum(axis=1)
+        b1 = df_sale_profit.loc[:, END:END].sum(axis=1)
+        b2 = df_sale_revenue.loc[:, END:END].sum(axis=1)
+        report_mode31(a1, a2, b1, b2, END, END, '毛利率', digit=1)
 
-    a1 = df_budget_profit.loc[:, START:END].sum(axis=1)
-    a2 = df_budget_revenue.loc[:, START:END].sum(axis=1)
-    b1 = df_sale_profit.loc[:, START:END].sum(axis=1)
-    b2 = df_sale_revenue.loc[:, START:END].sum(axis=1)
-    report_mode31(a1, a2, b1, b2, START, END, '毛利率', digit=1)
+        a1 = df_budget_profit.loc[:, START:END].sum(axis=1)
+        a2 = df_budget_revenue.loc[:, START:END].sum(axis=1)
+        b1 = df_sale_profit.loc[:, START:END].sum(axis=1)
+        b2 = df_sale_revenue.loc[:, START:END].sum(axis=1)
+        report_mode31(a1, a2, b1, b2, START, END, '毛利率', digit=1)
 
     product_report('7022')
     product_report('7323')
     product_report('6090')
     product_report('5314')
     product_report('5312')
-    product_report('3112')
     product_report('9040')
-    product_report('9006')
-    product_report('HY090')
 
-    note_file = os.path.join(NOTE_PATH, '其他.txt')
-    if os.path.exists(note_file):
-        slide_note('其他情况说明', note_file)
+    if not IS_ZJ:
+        product_report('3112')
+        product_report('9006')
+        product_report('HY090')
+
+        note_file = os.path.join(NOTE_PATH, '其他.txt')
+        if os.path.exists(note_file):
+            slide_note('其他情况说明', note_file)
 
     save_ppt()
     clear_tmp_file()
